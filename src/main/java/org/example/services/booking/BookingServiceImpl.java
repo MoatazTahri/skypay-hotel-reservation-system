@@ -1,7 +1,6 @@
 package org.example.services.booking;
 
 import org.example.entities.BookingRequest;
-import org.example.entities.Room;
 import org.example.entities.User;
 import org.example.exceptions.room.RoomIsNotFreeException;
 import org.example.exceptions.room.RoomNotFoundException;
@@ -30,38 +29,38 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public void bookRoom(BookingRequest bookingRequest) {
         User user = bookingRequest.getUser();
-        Room room = bookingRequest.getRoom();
+        int roomNumber = bookingRequest.getRoomNumber();
         // Check for user existence
         if (!userService.isUserExists(user)) {
-            throw new UserNotFoundException("Cannot book room number {" + room.getNumber() + "} for user id {" + user.getId() + "} : user not found");
+            throw new UserNotFoundException("Cannot book room number {" + roomNumber + "} for user id {" + user.getId() + "} : user not found");
         }
         // Check for room existence
-        if (!roomService.isRoomExists(room)) {
-            throw new RoomNotFoundException("Cannot book room with number {" + room.getNumber() + "} for user id {" + user.getId() + "} : room not found");
+        if (!roomService.isRoomExists(roomNumber)) {
+            throw new RoomNotFoundException("Cannot book room with number {" + roomNumber + "} for user id {" + user.getId() + "} : room not found");
         }
         // Check for dates nullability
         if (bookingRequest.getCheckIn() == null || bookingRequest.getCheckOut() == null) {
-            throw new IllegalArgumentException("Cannot book room number {" + room.getNumber() + "} for user id {" + user.getId() + "} : check in or check out date is null");
+            throw new IllegalArgumentException("Cannot book room number {" + roomNumber + "} for user id {" + user.getId() + "} : check in or check out date is null");
         }
         // Check if end date is after start date
         if (bookingRequest.getCheckIn().after(bookingRequest.getCheckOut())) {
-            throw new IllegalArgumentException("Cannot book room number {" + room.getNumber() + "} for user id {" + user.getId() + "} : check in date is after check out date");
+            throw new IllegalArgumentException("Cannot book room number {" + roomNumber + "} for user id {" + user.getId() + "} : check in date is after check out date");
         }
         // Check if the balance is enough for booking
         int bookingDurationInDays = TimeUtils.getDaysBetween(bookingRequest.getCheckIn(), bookingRequest.getCheckOut());
-        if (bookingRequest.getUser().getBalance() < bookingRequest.getRoom().getPricePerNight() * bookingDurationInDays) {
-            throw new UserInsufficientBalanceException("Cannot book room number {" + room.getNumber() + "} for user id {" + user.getId() + "} : insufficient balance for " + bookingDurationInDays + " night(s)");
+        if (bookingRequest.getUser().getBalance() < bookingRequest.getPricePerNight() * bookingDurationInDays) {
+            throw new UserInsufficientBalanceException("Cannot book room number {" + roomNumber + "} for user id {" + user.getId() + "} : insufficient balance for " + bookingDurationInDays + " night(s)");
         }
         // Check for room availability
         List<BookingRequest> alreadyBookedRooms = bookingRequests.stream()
-                .filter(b -> b.getRoom().getNumber() == room.getNumber()
+                .filter(b -> b.getRoomNumber() == roomNumber
                         && bookingRequest.getCheckIn().before(b.getCheckOut()))
                 .toList();
         if (!alreadyBookedRooms.isEmpty()) {
-            throw new RoomIsNotFreeException("Cannot book room with number {" + room.getNumber() + "} for user id {" + user.getId() + "} : room is not free");
+            throw new RoomIsNotFreeException("Cannot book room with number {" + roomNumber + "} for user id {" + user.getId() + "} : room is not free");
         }
         bookingRequests.add(bookingRequest);
-        userService.getUserById(user.getId()).setBalance(user.getBalance() - bookingRequest.getRoom().getPricePerNight() * bookingDurationInDays);
+        userService.getUserById(user.getId()).setBalance(user.getBalance() - bookingRequest.getPricePerNight() * bookingDurationInDays);
     }
 
     @Override
@@ -75,9 +74,9 @@ public class BookingServiceImpl implements BookingService {
             BookingRequest booking = bookingsIterator.previous();
             System.out.printf("%-10d %-10d %-10s %-15d %-15s %-15s%n",
                     booking.getUser().getId(),
-                    booking.getRoom().getNumber(),
-                    booking.getRoom().getType(),
-                    booking.getRoom().getPricePerNight(),
+                    booking.getRoomNumber(),
+                    booking.getType(),
+                    booking.getPricePerNight(),
                     dateFormat.format(booking.getCheckIn()),
                     dateFormat.format(booking.getCheckOut()));
         }

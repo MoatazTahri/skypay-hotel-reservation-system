@@ -11,14 +11,17 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public void setRoom(Room room) throws RoomAlreadyExistsException {
-        if (rooms.stream().anyMatch(r -> r.getNumber() == room.getNumber())) {
-            throw new RoomAlreadyExistsException("Room with number " + room.getNumber() + " already exists");
+        Room room1 = rooms.stream().filter(r -> r.getNumber() == room.getNumber()).findFirst().orElse(null);
+        if (room1 != null) {
+            room1.setType(room.getType());
+            room1.setPricePerNight(room.getPricePerNight());
+        } else {
+            rooms.add(room);
         }
-        rooms.add(room);
     }
 
     @Override
-    public boolean isRoomExists(Room room) {
-        return rooms.stream().anyMatch(r -> r.getNumber() == room.getNumber());
+    public boolean isRoomExists(int roomNumber) {
+        return rooms.stream().anyMatch(r -> r.getNumber() == roomNumber);
     }
 }
